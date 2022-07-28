@@ -28,29 +28,79 @@ exports.addfoodItem=BigPromise(async (req , res, next) =>{
 
 exports.searchfoodItem=BigPromise(async (req , res, next) =>{
     
-    const {calories} =req.body
-    const highCalorie=calories+100;
-    const lowCalorie=calories-100;
-    const FoodItem=await Fooditem.find();
-    var food=[]
-    function checkProtein(protein,calories){
-        const protien_conversion=4*protein;
-        if(pr<=(calo*0.3) && pr>=(calory*0.2)){
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
-    for (var i=0; i < FoodItem.length; i++) {
-        if(FoodItem[i].calories<highCalorie&&FoodItem[i].calories>lowCalorie){
-            if(checkProtein(FoodItem[i].protein,FoodItem[i].calories)){
-            food.push(FoodItem[i]);
-            }
-        }
-     }
 
-   res.send(ans);
+
+   const {givenCalories} =req.body
+    
+   const FoodItem=await Fooditem.find();
+
+   async function checkProtein(protein,calory){
+       var prCal=4*protein;
+       if(prCal<=(calory*0.3)&&prCal>=(calory*0.2)){
+           return true;
+       }
+       else{
+           return false;
+       }
+   }
+   async function check(temp){
+       for(var i=0;i<foodPlan.length;i++){
+           if(foodPlan[i].length==temp.length){
+               for(var j=0;j<temp.length;j++){
+                   if(foodPlan[i][j]==temp[j]){
+                       return false;
+                   }
+               }
+           }
+       }
+       return true;
+   }
+   var foodPlan=[];
+   var low=caloryReq-100;
+   var high=caloryReq+100;
+   var temp=[];
+   async function search(temp,cal,ind){
+      
+       if(temp.length>5){
+           return 0;
+       }
+       if(ind>=FoodItem.length){
+           return 0;
+       }
+       if((cal<hi)&&(cal>lo)){
+           if((temp.length>=2)&&(await check(temp))){
+           var prCal=0;
+           for(var j=0;j<temp.length;j++){
+               prCal+=temp[j].protein;
+           }
+           if(await checkProtein(prCal,cal)){
+           var arr=[];
+           for(var i=0;i<temp.length;i++){
+               arr.push(temp[i]);
+           }
+           foodPlan.push(arr);
+       }
+       }
+       }
+       if(cal>hi){
+           return 0;
+       }
+           
+           
+        await search(temp,cal,ind+1);
+        temp.push(FoodItem[ind]);
+        cal+=FoodItem[ind].calories;
+        await search(temp,cal,ind+1);
+        temp.pop();
+        cal-=FoodItem[ind].calories;
+          
+   }
+   await search(temp,0,0);
+       
+    res.status(200).json({
+    success: true ,
+    foodPlan
+    });
  
 
 })
